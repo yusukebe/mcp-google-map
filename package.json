@@ -1,0 +1,47 @@
+{
+  "name": "@cablate/mcp-google-map",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --outfile=dist/index.cjs --external:pdfreader --external:jsdom --external:mammoth --external:csv-parse --external:libreoffice-convert && shx chmod +x dist/index.cjs",
+    "start": "node dist/index.js",
+    "dev": "tsc-watch --onSuccess \"node dist/index.js\""
+  },
+  "dependencies": {
+    "@googlemaps/google-maps-services-js": "^3.3.42",
+    "@modelcontextprotocol/sdk": "^1.5.0",
+    "dotenv": "^16.4.1",
+    "esbuild": "^0.25.0",
+    "shx": "^0.3.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.16",
+    "tsc-watch": "^6.0.4",
+    "typescript": "^5.3.3"
+  },
+  "author": "CabLate",
+  "files": [
+    "dist",
+    "dist/**/*.map",
+    "README.md"
+  ],
+  "bin": {
+    "mcp-google-map": "./dist/index.cjs"
+  },
+  "keywords": [
+    "google",
+    "map",
+    "api",
+    "llm",
+    "typescript",
+    "mcp"
+  ],
+  "homepage": "https://github.com/cablate/mcp-google-map#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cablate/mcp-google-map.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cablate/mcp-google-map/issues"
+  }
+}

@@ -3,10 +3,10 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { GET_PLACE_DETAILS_TOOL, SEARCH_NEARBY_TOOL } from "./maps-tools/mapsTools.js";
+import { DIRECTIONS_TOOL, DISTANCE_MATRIX_TOOL, ELEVATION_TOOL, GEOCODE_TOOL, GET_PLACE_DETAILS_TOOL, REVERSE_GEOCODE_TOOL, SEARCH_NEARBY_TOOL } from "./maps-tools/mapsTools.js";
 import { PlacesSearcher } from "./maps-tools/searchPlaces.js";
 
-const tools = [SEARCH_NEARBY_TOOL, GET_PLACE_DETAILS_TOOL];
+const tools = [SEARCH_NEARBY_TOOL, GET_PLACE_DETAILS_TOOL, GEOCODE_TOOL, REVERSE_GEOCODE_TOOL, DISTANCE_MATRIX_TOOL, DIRECTIONS_TOOL, ELEVATION_TOOL];
 const placesSearcher = new PlacesSearcher();
 
 const server = new Server(
@@ -79,6 +79,136 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       if (!result.success) {
         return {
           content: [{ type: "text", text: result.error || "獲取詳細資訊失敗" }],
+          isError: true,
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result.data, null, 2),
+          },
+        ],
+        isError: false,
+      };
+    }
+
+    if (name === "maps_geocode") {
+      const { address } = args as {
+        address: string;
+      };
+
+      const result = await placesSearcher.geocode(address);
+
+      if (!result.success) {
+        return {
+          content: [{ type: "text", text: result.error || "地址轉換座標失敗" }],
+          isError: true,
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result.data, null, 2),
+          },
+        ],
+        isError: false,
+      };
+    }
+
+    if (name === "maps_reverse_geocode") {
+      const { latitude, longitude } = args as {
+        latitude: number;
+        longitude: number;
+      };
+
+      const result = await placesSearcher.reverseGeocode(latitude, longitude);
+
+      if (!result.success) {
+        return {
+          content: [{ type: "text", text: result.error || "座標轉換地址失敗" }],
+          isError: true,
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result.data, null, 2),
+          },
+        ],
+        isError: false,
+      };
+    }
+
+    if (name === "maps_distance_matrix") {
+      const { origins, destinations, mode } = args as {
+        origins: string[];
+        destinations: string[];
+        mode?: "driving" | "walking" | "bicycling" | "transit";
+      };
+
+      const result = await placesSearcher.calculateDistanceMatrix(origins, destinations, mode || "driving");
+
+      if (!result.success) {
+        return {
+          content: [{ type: "text", text: result.error || "計算距離矩陣失敗" }],
+          isError: true,
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result.data, null, 2),
+          },
+        ],
+        isError: false,
+      };
+    }
+
+    if (name === "maps_directions") {
+      const { origin, destination, mode } = args as {
+        origin: string;
+        destination: string;
+        mode?: "driving" | "walking" | "bicycling" | "transit";
+      };
+
+      const result = await placesSearcher.getDirections(origin, destination, mode || "driving");
+
+      if (!result.success) {
+        return {
+          content: [{ type: "text", text: result.error || "獲取路線指引失敗" }],
+          isError: true,
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result.data, null, 2),
+          },
+        ],
+        isError: false,
+      };
+    }
+
+    if (name === "maps_elevation") {
+      const { locations } = args as {
+        locations: Array<{ latitude: number; longitude: number }>;
+      };
+
+      const result = await placesSearcher.getElevation(locations);
+
+      if (!result.success) {
+        return {
+          content: [{ type: "text", text: result.error || "獲取海拔數據失敗" }],
           isError: true,
         };
       }

@@ -6,9 +6,24 @@ A powerful Model Context Protocol (MCP) server providing comprehensive Google Ma
 
 ### Google Maps Features
 
-- Location search and information retrieval
-- Geocoding and reverse geocoding
-- Detailed place information
+- **Location Search**
+
+  - Search for places near a specific location with customizable radius and filters
+  - Get detailed place information including ratings, opening hours, and contact details
+
+- **Geocoding Services**
+
+  - Convert addresses to coordinates (geocoding)
+  - Convert coordinates to addresses (reverse geocoding)
+
+- **Distance & Directions**
+
+  - Calculate distances and travel times between multiple origins and destinations
+  - Get detailed directions between two points with step-by-step instructions
+  - Support for different travel modes (driving, walking, bicycling, transit)
+
+- **Elevation Data**
+  - Retrieve elevation data for specific locations
 
 ## Installation
 
@@ -47,6 +62,18 @@ mcp-google-map
 ```
 
 3. Click "Save" to complete the installation
+
+## Available Tools
+
+The server provides the following tools:
+
+1. **search_nearby** - Search for places near a specific location
+2. **get_place_details** - Get detailed information about a specific place
+3. **maps_geocode** - Convert an address to coordinates
+4. **maps_reverse_geocode** - Convert coordinates to an address
+5. **maps_distance_matrix** - Calculate distances and times between multiple origins and destinations
+6. **maps_directions** - Get directions between two points
+7. **maps_elevation** - Get elevation data for specific locations
 
 ## Google Maps API Setup
 

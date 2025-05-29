@@ -257,14 +257,37 @@ export class GoogleMapsTools {
   async getDirections(
     origin: string,
     destination: string,
-    mode: "driving" | "walking" | "bicycling" | "transit" = "driving"
+    mode: "driving" | "walking" | "bicycling" | "transit" = "driving",
+    departure_time?: Date,
+    arrival_time?: Date
   ): Promise<{
     routes: any[];
     summary: string;
     total_distance: { value: number; text: string };
     total_duration: { value: number; text: string };
+    arrival_time: string;
+    departure_time: string;
   }> {
     try {
+      let apiArrivalTime: number | undefined = undefined;
+      if (arrival_time) {
+        apiArrivalTime = Math.floor(arrival_time.getTime() / 1000); // Convert ms to seconds
+      }
+
+      let apiDepartureTime: number | "now" | undefined = undefined;
+      // Only set departure_time if arrival_time is not set, as they are mutually exclusive for the API request
+      if (!apiArrivalTime) {
+        if (departure_time instanceof Date) {
+          // Check if departure_time is a Date object
+          apiDepartureTime = Math.floor(departure_time.getTime() / 1000); // Convert ms to seconds
+        } else if (departure_time) {
+          // If it's not a Date but some other truthy value (like 'now' if passed directly)
+          apiDepartureTime = departure_time as unknown as "now"; //This case should ideally be refined based on expected inputs beyond Date
+        } else {
+          apiDepartureTime = "now"; // Default if no specific departure_time is given
+        }
+      }
+
       const response = await this.client.directions({
         params: {
           origin: origin,
@@ -272,13 +295,16 @@ export class GoogleMapsTools {
           mode: mode as TravelMode,
           language: this.defaultLanguage,
           key: process.env.GOOGLE_MAPS_API_KEY || "",
+          arrival_time: apiArrivalTime,
+          departure_time: apiDepartureTime,
         },
       });
 
       const result = response.data;
 
       if (result.status !== "OK") {
-        throw new Error(`路線指引獲取失敗: ${result.status}`);
+        // Include API times in error for better debugging
+        throw new Error(`路線指引獲取失敗: ${result.status} (arrival_time: ${apiArrivalTime}, departure_time: ${apiDepartureTime})`);
       }
 
       if (result.routes.length === 0) {
@@ -287,6 +313,26 @@ export class GoogleMapsTools {
 
       const route = result.routes[0];
       const legs = route.legs[0];
+
+      // Helper function to format date, checking if time_zone is available
+      const formatTime = (timeInfo: any) => {
+        if (!timeInfo || typeof timeInfo.value !== "number") return "";
+        // API value is in seconds, convert to ms for Date constructor
+        const date = new Date(timeInfo.value * 1000);
+        const options: Intl.DateTimeFormatOptions = {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false, // Use 24-hour format
+        };
+        if (timeInfo.time_zone && typeof timeInfo.time_zone === "string") {
+          options.timeZone = timeInfo.time_zone;
+        }
+        return date.toLocaleString(this.defaultLanguage.toString(), options);
+      };
 
       return {
         routes: result.routes,
@@ -299,10 +345,12 @@ export class GoogleMapsTools {
           value: legs.duration.value,
           text: legs.duration.text,
         },
+        arrival_time: formatTime(legs.arrival_time),
+        departure_time: formatTime(legs.departure_time),
       };
     } catch (error) {
       console.error("Error in getDirections:", error);
-      throw new Error("獲取路線指引時發生錯誤");
+      throw new Error("獲取路線指引時發生錯誤" + error);
     }
   }
 

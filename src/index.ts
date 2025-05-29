@@ -173,13 +173,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     if (name === "maps_directions") {
-      const { origin, destination, mode } = args as {
+      const { origin, destination, mode, arrival_time, departure_time } = args as {
         origin: string;
         destination: string;
         mode?: "driving" | "walking" | "bicycling" | "transit";
+        departure_time?: string;
+        arrival_time?: string;
       };
 
-      const result = await placesSearcher.getDirections(origin, destination, mode || "driving");
+      const result = await placesSearcher.getDirections(origin, destination, mode, departure_time, arrival_time);
 
       if (!result.success) {
         return {

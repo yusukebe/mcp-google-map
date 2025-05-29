@@ -105,7 +105,7 @@ export const DISTANCE_MATRIX_TOOL = {
 
 export const DIRECTIONS_TOOL = {
   name: "maps_directions",
-  description: "獲取兩點之間的路線指引",
+  description: "獲取兩點之間的詳細導航路線",
   inputSchema: {
     type: "object",
     properties: {
@@ -122,6 +122,15 @@ export const DIRECTIONS_TOOL = {
         enum: ["driving", "walking", "bicycling", "transit"],
         description: "交通模式",
         default: "driving",
+      },
+      departure_time: {
+        type: "string",
+        description: "出發時間",
+        default: new Date().toISOString(),
+      },
+      arrival_time: {
+        type: "string",
+        description: "抵達時間",
       },
     },
     required: ["origin", "destination"],

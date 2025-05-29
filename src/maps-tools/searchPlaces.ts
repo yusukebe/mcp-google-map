@@ -184,9 +184,16 @@ export class PlacesSearcher {
     }
   }
 
-  async getDirections(origin: string, destination: string, mode: "driving" | "walking" | "bicycling" | "transit" = "driving"): Promise<DirectionsResponse> {
+  async getDirections(origin: string, 
+    destination: string,
+    mode: "driving" | "walking" | "bicycling" | "transit" = "driving",
+    departure_time?: string,
+    arrival_time?: string,
+  ): Promise<DirectionsResponse> {
     try {
-      const result = await this.mapsTools.getDirections(origin, destination, mode);
+      const departureTime = departure_time ? new Date(departure_time) : new Date();
+      const arrivalTime = arrival_time ? new Date(arrival_time) : undefined;
+      const result = await this.mapsTools.getDirections(origin, destination, mode, departureTime, arrivalTime);
 
       return {
         success: true,

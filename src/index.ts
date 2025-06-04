@@ -247,7 +247,7 @@ async function runServer() {
   try {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.log("MCP Maps Server started");
+    console.error("MCP Maps Server started");
   } catch (error) {
     console.error("Server startup failed:", error);
     process.exit(1);

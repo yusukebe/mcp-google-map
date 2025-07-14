@@ -6,96 +6,162 @@
 
 # MCP Google Map Server
 
-A powerful Model Context Protocol (MCP) server providing comprehensive Google Maps API integration with LLM processing capabilities.
+A powerful Model Context Protocol (MCP) server providing comprehensive Google Maps API integration with streamable HTTP transport support and LLM processing capabilities.
+
+## ✅ Testing Status
+
+**This MCP server has been tested and verified to work correctly with:**
+- Claude Desktop
+- Dive Desktop
+- MCP protocol implementations
+
+All tools and features are confirmed functional through real-world testing.
 
 ## Features
 
-### Google Maps Features
+### 🗺️ Google Maps Integration
 
 - **Location Search**
-
   - Search for places near a specific location with customizable radius and filters
   - Get detailed place information including ratings, opening hours, and contact details
 
 - **Geocoding Services**
-
   - Convert addresses to coordinates (geocoding)
   - Convert coordinates to addresses (reverse geocoding)
 
 - **Distance & Directions**
-
   - Calculate distances and travel times between multiple origins and destinations
-  - Get detailed directions between two points with step-by-step instructions
+  - Get detailed turn-by-turn directions between two points
   - Support for different travel modes (driving, walking, bicycling, transit)
 
 - **Elevation Data**
   - Retrieve elevation data for specific locations
 
+### 🚀 Advanced Features
+
+- **Streamable HTTP Transport**: Latest MCP protocol with real-time streaming capabilities
+- **Session Management**: Stateful sessions with UUID-based identification
+- **Multiple Connection Support**: Handle multiple concurrent client connections
+- **Echo Service**: Built-in testing tool for MCP server functionality
+
 ## Installation
 
-### Via NPM
+### 1. via NPM
 
 ```bash
 npm install -g @cablate/mcp-google-map
 ```
 
-## Usage
-
-### Command Line
+### 2. Run the Server
 
 ```bash
-mcp-google-map
+
+mcp-google-map --port 3000 --apikey "your_api_key_here"
+
+# Using short options
+mcp-google-map -p 3000 -k "your_api_key_here"
+
+# Show help information
+mcp-google-map --help
 ```
 
-### Integration with [Dive Desktop](https://github.com/OpenAgentPlatform/Dive)
+### 3. Server Endpoints
 
-1. Click "+ Add MCP Server" in Dive Desktop
-2. Copy and paste the following configuration:
+- **Main MCP Endpoint**: `http://localhost:3000/mcp`
+- **Available Tools**: 8 tools including Google Maps services and echo
 
-```json
-{
-  "mcpServers": {
-    "google-map": {
-      "command": "npx",
-      "args": ["-y", "@cablate/mcp-google-map"],
-      "env": {
-        "GOOGLE_MAPS_API_KEY": "your_api_key"
-      },
-      "enabled": true
-    }
-  }
-}
+### Environment Variables
+
+Alternatively, create a `.env` file in your working directory:
+
+```env
+# Required
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+
+# Optional
+MCP_SERVER_PORT=3000
 ```
 
-3. Click "Save" to complete the installation
+**Note**: Command line options take precedence over environment variables.
 
 ## Available Tools
 
 The server provides the following tools:
 
-1. **search_nearby** - Search for places near a specific location
-2. **get_place_details** - Get detailed information about a specific place
-3. **maps_geocode** - Convert an address to coordinates
-4. **maps_reverse_geocode** - Convert coordinates to an address
-5. **maps_distance_matrix** - Calculate distances and times between multiple origins and destinations
-6. **maps_directions** - Get directions between two points
-7. **maps_elevation** - Get elevation data for specific locations
+### Google Maps Tools
 
-## Google Maps API Setup
+1. **search_nearby** - Search for nearby places based on location, with optional filtering by keywords, distance, rating, and operating hours
+2. **get_place_details** - Get detailed information about a specific place including contact details, reviews, ratings, and operating hours
+3. **maps_geocode** - Convert addresses or place names to geographic coordinates (latitude and longitude)
+4. **maps_reverse_geocode** - Convert geographic coordinates to a human-readable address
+5. **maps_distance_matrix** - Calculate travel distances and durations between multiple origins and destinations
+6. **maps_directions** - Get detailed turn-by-turn navigation directions between two locations
+7. **maps_elevation** - Get elevation data (height above sea level) for specific geographic locations
 
-To use this service, you need to:
+## Development
 
-1. Create a project in [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable Google Maps API services
-3. Obtain an API key
-4. Set the `GOOGLE_MAPS_API_KEY` environment variable
+### Local Development
+
+```bash
+# Clone the repository
+git clone https://github.com/cablate/mcp-google-map.git
+cd mcp-google-map
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your API key
+
+# Build the project
+npm run build
+
+# Start the server
+npm start
+
+# Or run in development mode
+npm run dev
+```
+
+### Project Structure
+
+```
+src/
+├── cli.ts                    # Main CLI entry point
+├── config.ts                 # Server configuration
+├── index.ts                  # Package exports
+├── core/
+│   └── BaseMcpServer.ts     # Base MCP server with streamable HTTP
+└── tools/
+    ├── echo.ts              # Echo service tool
+    └── maps/                # Google Maps tools
+        ├── toolclass.ts     # Google Maps API client
+        ├── searchPlaces.ts  # Maps service layer
+        ├── searchNearby.ts  # Search nearby places
+        ├── placeDetails.ts  # Place details
+        ├── geocode.ts       # Geocoding
+        ├── reverseGeocode.ts # Reverse geocoding
+        ├── distanceMatrix.ts # Distance matrix
+        ├── directions.ts    # Directions
+        └── elevation.ts     # Elevation data
+```
 
 ## Tech Stack
 
-- TypeScript
-- Node.js
-- Google Maps Services JS
-- Model Context Protocol SDK
+- **TypeScript** - Type-safe development
+- **Node.js** - Runtime environment
+- **Google Maps Services JS** - Google Maps API integration
+- **Model Context Protocol SDK** - MCP protocol implementation
+- **Express.js** - HTTP server framework
+- **Zod** - Schema validation
+
+## Security Considerations
+
+- API keys are handled server-side for security
+- DNS rebinding protection available for production
+- Input validation using Zod schemas
+- Error handling and logging
 
 ## License
 
@@ -108,12 +174,27 @@ Community participation and contributions are welcome! Here's how you can contri
 - ⭐️ Star the project if you find it helpful
 - 🐛 Submit Issues: Report bugs or provide suggestions
 - 🔧 Create Pull Requests: Submit code improvements
+- 📖 Documentation: Help improve documentation
 
 ## Contact
 
 If you have any questions or suggestions, feel free to reach out:
 
 - 📧 Email: [reahtuoo310109@gmail.com](mailto:reahtuoo310109@gmail.com)
-- 📧 GitHub: [CabLate](https://github.com/cablate/)
+- 💻 GitHub: [CabLate](https://github.com/cablate/)
 - 🤝 Collaboration: Welcome to discuss project cooperation
 - 📚 Technical Guidance: Sincere welcome for suggestions and guidance
+
+## Changelog
+
+### v0.0.5
+- Added streamable HTTP transport support
+- Improved CLI interface with emoji indicators
+- Enhanced error handling and logging
+- Added comprehensive tool descriptions for LLM integration
+- Updated to latest MCP SDK version
+
+### v0.0.4
+- Initial release with basic Google Maps integration
+- Support for location search, geocoding, and directions
+- Compatible with MCP protocol

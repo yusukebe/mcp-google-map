@@ -74,7 +74,6 @@ export class PlacesSearcher {
   async searchNearby(params: { center: { value: string; isCoordinates: boolean }; keyword?: string; radius?: number; openNow?: boolean; minRating?: number }): Promise<SearchNearbyResponse> {
     try {
       const location = await this.mapsTools.getLocation(params.center);
-      console.error(location);
       const places = await this.mapsTools.searchNearbyPlaces({
         location,
         keyword: params.keyword,
@@ -184,12 +183,7 @@ export class PlacesSearcher {
     }
   }
 
-  async getDirections(origin: string, 
-    destination: string,
-    mode: "driving" | "walking" | "bicycling" | "transit" = "driving",
-    departure_time?: string,
-    arrival_time?: string,
-  ): Promise<DirectionsResponse> {
+  async getDirections(origin: string, destination: string, mode: "driving" | "walking" | "bicycling" | "transit" = "driving", departure_time?: string, arrival_time?: string): Promise<DirectionsResponse> {
     try {
       const departureTime = departure_time ? new Date(departure_time) : new Date();
       const arrivalTime = arrival_time ? new Date(arrival_time) : undefined;

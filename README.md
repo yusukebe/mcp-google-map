@@ -8,6 +8,11 @@
 
 A powerful Model Context Protocol (MCP) server providing comprehensive Google Maps API integration with streamable HTTP transport support and LLM processing capabilities.
 
+## 🙌 Special Thanks
+
+This project has received contributions from the community.  
+Special thanks to [@junyinnnn](https://github.com/junyinnnn) for helping add support for `streamablehttp`.
+
 ## ✅ Testing Status
 
 **This MCP server has been tested and verified to work correctly with:**

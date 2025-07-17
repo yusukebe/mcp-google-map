@@ -8,9 +8,18 @@ import { hideBin } from "yargs/helpers";
 import serverConfigs from "./config.js";
 import { BaseMcpServer } from "./core/BaseMcpServer.js";
 import { Logger } from "./index.js";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { readFileSync } from 'fs';
 
-// Load environment variables from .env file
+// Get the directory of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Try to load .env from current directory first, then from package directory
 dotenvConfig({ path: resolve(process.cwd(), ".env") });
+// Also try to load from the package installation directory
+dotenvConfig({ path: resolve(__dirname, "../.env") });
 
 export async function startServer(port?: number, apiKey?: string): Promise<void> {
   // Override environment variables with CLI arguments if provided
@@ -75,6 +84,17 @@ if (
   process.argv[1] &&
   (process.argv[1].endsWith("cli.ts") || process.argv[1].endsWith("cli.js"))
 ) {
+  // Read package.json to get version
+  let packageVersion = "0.0.0";
+  try {
+    const packageJsonPath = resolve(__dirname, "../package.json");
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+    packageVersion = packageJson.version;
+  } catch (e) {
+    // Fallback version if package.json can't be read
+    packageVersion = "0.0.0";
+  }
+
   // Parse command line arguments
   const argv = yargs(hideBin(process.argv))
     .option('port', {
@@ -94,6 +114,8 @@ if (
       type: 'boolean',
       description: 'Show help'
     })
+    .version(packageVersion)
+    .alias('version', 'v')
     .example([
       ['$0', 'Start server with default settings'],
       ['$0 --port 3000 --apikey "your_api_key"', 'Start server with custom port and API key'],

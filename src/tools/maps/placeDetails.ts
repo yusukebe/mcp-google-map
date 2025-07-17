@@ -10,10 +10,13 @@ const SCHEMA = {
 
 export type PlaceDetailsParams = z.infer<z.ZodObject<typeof SCHEMA>>;
 
-const placesSearcher = new PlacesSearcher();
+let placesSearcher: PlacesSearcher | null = null;
 
 async function ACTION(params: PlaceDetailsParams): Promise<{ content: any[]; isError?: boolean }> {
   try {
+    if (!placesSearcher) {
+      placesSearcher = new PlacesSearcher();
+    }
     const result = await placesSearcher.getPlaceDetails(params.placeId);
 
     if (!result.success) {

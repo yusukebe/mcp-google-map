@@ -11,10 +11,13 @@ const SCHEMA = {
 
 export type ReverseGeocodeParams = z.infer<z.ZodObject<typeof SCHEMA>>;
 
-const placesSearcher = new PlacesSearcher();
+let placesSearcher: PlacesSearcher | null = null;
 
 async function ACTION(params: ReverseGeocodeParams): Promise<{ content: any[]; isError?: boolean }> {
   try {
+    if (!placesSearcher) {
+      placesSearcher = new PlacesSearcher();
+    }
     const result = await placesSearcher.reverseGeocode(params.latitude, params.longitude);
 
     if (!result.success) {

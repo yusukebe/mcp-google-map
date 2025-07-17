@@ -12,10 +12,13 @@ const SCHEMA = {
 
 export type DistanceMatrixParams = z.infer<z.ZodObject<typeof SCHEMA>>;
 
-const placesSearcher = new PlacesSearcher();
+let placesSearcher: PlacesSearcher | null = null;
 
 async function ACTION(params: DistanceMatrixParams): Promise<{ content: any[]; isError?: boolean }> {
   try {
+    if (!placesSearcher) {
+      placesSearcher = new PlacesSearcher();
+    }
     const result = await placesSearcher.calculateDistanceMatrix(params.origins, params.destinations, params.mode);
 
     if (!result.success) {

@@ -14,10 +14,13 @@ const SCHEMA = {
 
 export type DirectionsParams = z.infer<z.ZodObject<typeof SCHEMA>>;
 
-const placesSearcher = new PlacesSearcher();
+let placesSearcher: PlacesSearcher | null = null;
 
 async function ACTION(params: DirectionsParams): Promise<{ content: any[]; isError?: boolean }> {
   try {
+    if (!placesSearcher) {
+      placesSearcher = new PlacesSearcher();
+    }
     const result = await placesSearcher.getDirections(
       params.origin,
       params.destination,

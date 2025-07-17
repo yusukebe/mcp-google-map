@@ -17,10 +17,13 @@ const SCHEMA = {
 
 export type SearchNearbyParams = z.infer<z.ZodObject<typeof SCHEMA>>;
 
-const placesSearcher = new PlacesSearcher();
+let placesSearcher: PlacesSearcher | null = null;
 
 async function ACTION(params: SearchNearbyParams): Promise<{ content: any[]; isError?: boolean }> {
   try {
+    if (!placesSearcher) {
+      placesSearcher = new PlacesSearcher();
+    }
     const result = await placesSearcher.searchNearby(params);
 
     if (!result.success) {

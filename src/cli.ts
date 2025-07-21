@@ -80,10 +80,19 @@ export async function startServer(port?: number, apiKey?: string): Promise<void>
 }
 
 // Check if this script is being run directly
-if (
-  process.argv[1] &&
-  (process.argv[1].endsWith("cli.ts") || process.argv[1].endsWith("cli.js"))
-) {
+// When installed globally via npm, process.argv[1] might be a symlink like /usr/local/bin/mcp-google-map
+// So we check multiple conditions to ensure the script runs properly
+const isRunDirectly = process.argv[1] && (
+  process.argv[1].endsWith("cli.ts") || 
+  process.argv[1].endsWith("cli.js") ||
+  process.argv[1].endsWith("mcp-google-map") ||
+  process.argv[1].includes("mcp-google-map")
+);
+
+// For ES modules, we can also check if this file is the entry point
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+
+if (isRunDirectly || isMainModule) {
   // Read package.json to get version
   let packageVersion = "0.0.0";
   try {

@@ -38,7 +38,7 @@ interface GeocodeResult {
 
 export class GoogleMapsTools {
   private client: Client;
-  private readonly defaultLanguage: Language = Language.zh_TW;
+  private readonly defaultLanguage: Language = Language.en;
 
   constructor() {
     this.client = new Client({});

@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import express, { Request, Response } from "express";
@@ -19,7 +20,7 @@ export interface ToolConfig {
 
 export class BaseMcpServer {
   protected readonly server: McpServer;
-  private transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
+  private transports: { [sessionId: string]: StreamableHTTPServerTransport | SSEServerTransport } = {};
   private httpServer: Server | null = null;
   private serverName: string;
 
@@ -72,8 +73,23 @@ export class BaseMcpServer {
       let transport: StreamableHTTPServerTransport;
 
       if (sessionId && this.transports[sessionId]) {
-        // Reuse existing transport
-        transport = this.transports[sessionId];
+        // Check if the transport is of the correct type
+        const existingTransport = this.transports[sessionId];
+        if (existingTransport instanceof StreamableHTTPServerTransport) {
+          // Reuse existing transport
+          transport = existingTransport;
+        } else {
+          // Transport exists but is not a StreamableHTTPServerTransport (could be SSEServerTransport)
+          res.status(400).json({
+            jsonrpc: "2.0",
+            error: {
+              code: -32000,
+              message: "Bad Request: Session exists but uses a different transport protocol",
+            },
+            id: null,
+          });
+          return;
+        }
       } else if (!sessionId && isInitializeRequest(req.body)) {
         // New initialization request
         transport = new StreamableHTTPServerTransport({
@@ -123,7 +139,12 @@ export class BaseMcpServer {
       }
 
       const transport = this.transports[sessionId];
-      await transport.handleRequest(req, res);
+      // Only StreamableHTTPServerTransport supports handleRequest
+      if (transport instanceof StreamableHTTPServerTransport) {
+        await transport.handleRequest(req, res);
+      } else {
+        res.status(400).send("This endpoint only supports StreamableHTTP transport");
+      }
     };
 
     // Handle GET requests for server-to-client notifications via SSE
@@ -132,9 +153,83 @@ export class BaseMcpServer {
     // Handle DELETE requests for session termination
     app.delete("/mcp", handleSessionRequest);
 
+    // SSE endpoint for establishing the stream (deprecated protocol version 2024-11-05)
+    app.get("/sse", async (req: Request, res: Response) => {
+      Logger.log(`[${this.serverName}] Received GET request to /sse (establishing SSE stream)`);
+      try {
+        // Create a new SSE transport for the client
+        const transport = new SSEServerTransport("/messages", res);
+        
+        // Store the transport by session ID
+        const sessionId = transport.sessionId;
+        this.transports[sessionId] = transport;
+        
+        // Set up onclose handler to clean up transport when closed
+        transport.onclose = () => {
+          Logger.log(`[${this.serverName}] SSE transport closed for session ${sessionId}`);
+          delete this.transports[sessionId];
+        };
+        
+        // Connect the transport to the MCP server
+        await this.server.connect(transport);
+        Logger.log(`[${this.serverName}] Established SSE stream with session ID: ${sessionId}`);
+      } catch (error) {
+        Logger.error(`[${this.serverName}] Error establishing SSE stream:`, error);
+        if (!res.headersSent) {
+          res.status(500).send('Error establishing SSE stream');
+        }
+      }
+    });
+
+    // Messages endpoint for receiving client JSON-RPC requests (deprecated protocol)
+    app.post("/messages", async (req: Request, res: Response) => {
+      Logger.log(`[${this.serverName}] Received POST request to /messages`);
+      
+      // Extract session ID from URL query parameter
+      const sessionId = req.query.sessionId as string;
+      if (!sessionId) {
+        Logger.error(`[${this.serverName}] No session ID provided in request URL`);
+        res.status(400).send('Missing sessionId parameter');
+        return;
+      }
+      
+      const transport = this.transports[sessionId];
+      if (!transport) {
+        Logger.error(`[${this.serverName}] No active transport found for session ID: ${sessionId}`);
+        res.status(404).send('Session not found');
+        return;
+      }
+      
+      // Check if transport is SSEServerTransport
+      if (!(transport instanceof SSEServerTransport)) {
+        Logger.error(`[${this.serverName}] Session exists but uses different transport protocol`);
+        res.status(400).json({
+          jsonrpc: '2.0',
+          error: {
+            code: -32000,
+            message: 'Bad Request: Session exists but uses a different transport protocol',
+          },
+          id: null,
+        });
+        return;
+      }
+      
+      try {
+        // Handle the POST message with the transport
+        await transport.handlePostMessage(req, res, req.body);
+      } catch (error) {
+        Logger.error(`[${this.serverName}] Error handling request:`, error);
+        if (!res.headersSent) {
+          res.status(500).send('Error handling request');
+        }
+      }
+    });
+
     this.httpServer = app.listen(port, () => {
       Logger.log(`[${this.serverName}] HTTP server listening on port ${port}`);
       Logger.log(`[${this.serverName}] MCP endpoint available at http://localhost:${port}/mcp`);
+      Logger.log(`[${this.serverName}] SSE endpoint available at http://localhost:${port}/sse`);
+      Logger.log(`[${this.serverName}] Messages endpoint available at http://localhost:${port}/messages`);
     });
   }
 
@@ -154,12 +249,24 @@ export class BaseMcpServer {
         }
         Logger.log(`[${this.serverName}] HTTP server stopped.`);
         this.httpServer = null;
-        const closingTransports = Object.values(this.transports).map((transport) => {
-          // Clean up transport
-          if (transport.sessionId) {
-            delete this.transports[transport.sessionId];
+        const closingTransports = Object.values(this.transports).map(async (transport) => {
+          try {
+            // Clean up transport
+            const sessionId = transport instanceof StreamableHTTPServerTransport 
+              ? transport.sessionId 
+              : transport instanceof SSEServerTransport 
+              ? transport.sessionId 
+              : undefined;
+              
+            if (sessionId) {
+              delete this.transports[sessionId];
+            }
+            
+            // Close the transport
+            await transport.close();
+          } catch (error) {
+            Logger.error(`[${this.serverName}] Error closing transport:`, error);
           }
-          return Promise.resolve();
         });
         Promise.all(closingTransports)
           .then(() => {

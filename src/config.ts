@@ -8,6 +8,7 @@ import { ReverseGeocode, ReverseGeocodeParams } from "./tools/maps/reverseGeocod
 import { DistanceMatrix, DistanceMatrixParams } from "./tools/maps/distanceMatrix.js";
 import { Directions, DirectionsParams } from "./tools/maps/directions.js";
 import { Elevation, ElevationParams } from "./tools/maps/elevation.js";
+import { ShowMap, ShowMapParams } from "./tools/maps/showMap.js";
 interface ServerInstanceConfig {
   // Renamed from ServerConfig and modified
   name: string;
@@ -61,6 +62,12 @@ const serverConfigs: ServerInstanceConfig[] = [
         description: Elevation.DESCRIPTION,
         schema: Elevation.SCHEMA,
         action: (params: ElevationParams) => Elevation.ACTION(params),
+      },
+      {
+        name: ShowMap.NAME,
+        description: ShowMap.DESCRIPTION,
+        schema: ShowMap.SCHEMA,
+        action: (params: ShowMapParams) => ShowMap.ACTION(params),
       },
     ],
   },
